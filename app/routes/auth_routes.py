@@ -41,9 +41,7 @@ def get_current_user(request: Request) -> str | None:
 async def login_page(request: Request):
     if get_current_user(request):
         return RedirectResponse(url="/", status_code=302)
-    return templates.TemplateResponse(
-        request=request, name="login.html", context={}
-    )
+    return templates.TemplateResponse(request=request, name="login.html", context={})
 
 
 @router.post("/login")
@@ -52,7 +50,9 @@ async def login(
     username: str = Form(...),
     password: str = Form(...),
 ):
-    if username != ADMIN_USERNAME or not bcrypt.checkpw(password.encode(), HASHED_PASSWORD):
+    if username != ADMIN_USERNAME or not bcrypt.checkpw(
+        password.encode(), HASHED_PASSWORD
+    ):
         return templates.TemplateResponse(
             request=request,
             name="login.html",

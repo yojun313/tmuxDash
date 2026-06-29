@@ -26,6 +26,7 @@ async def index(request: Request):
 async def websocket_endpoint(websocket: WebSocket):
     # WebSocket은 쿠키로 토큰 검증
     from app.routes.auth_routes import verify_token
+
     token = websocket.cookies.get("access_token")
     if not verify_token(token):
         await websocket.close(code=1008)  # Policy Violation
