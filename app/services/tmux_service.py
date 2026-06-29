@@ -1,5 +1,18 @@
 import subprocess
 from dataclasses import dataclass, field, asdict
+from ansi2html import Ansi2HTMLConverter
+
+_conv = Ansi2HTMLConverter(inline=True, dark_bg=True, scheme="xterm")
+
+
+def _to_html(text: str) -> str:
+    """ANSI 이스케이프 → inline style HTML"""
+    # ansi2html은 full HTML 문서를 반환하므로 body 내용만 추출
+    full = _conv.convert(text, full=True)
+    # <pre> 안 내용만 뽑기
+    start = full.find("<pre")
+    end = full.rfind("</pre>") + 6
+    return full[start:end] if start != -1 else f"<pre>{text}</pre>"
 
 
 @dataclass
@@ -83,17 +96,21 @@ def get_sessions() -> list[TmuxSession]:
                 pane_index, pane_title = pparts[0], pparts[1]
 
                 # 팬 내용 캡처 (최근 200줄)
-                content = _run(
-                    [
-                        "tmux",
-                        "capture-pane",
-                        "-p",
-                        "-t",
-                        f"{session_name}:{win_index}.{pane_index}",
-                        "-S",
-                        "-200",
-                    ]
+
+                content = _to_html(
+                    _run(
+                        [
+                            "tmux",
+                            "capture-pane",
+                            "-p",
+                            "-t",
+                            f"{session_name}:{win_index}.{pane_index}",
+                            "-S",
+                            "-200",
+                        ]
+                    )
                 )
+
                 window.panes.append(
                     TmuxPane(
                         index=pane_index,
@@ -109,7 +126,7 @@ def get_sessions() -> list[TmuxSession]:
 
 
 def get_pane_content(session: str, window: str, pane: str, lines: int = 200) -> str:
-    return _run(
+    raw = _run(
         [
             "tmux",
             "capture-pane",
@@ -120,3 +137,4 @@ def get_pane_content(session: str, window: str, pane: str, lines: int = 200) -> 
             f"-{lines}",
         ]
     )
+    return _to_html(raw)

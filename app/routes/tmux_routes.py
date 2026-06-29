@@ -1,7 +1,7 @@
 import asyncio
 import json
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.services import tmux_service
 from app.routes.auth_routes import get_current_user
@@ -20,6 +20,12 @@ async def index(request: Request):
         name="index.html",
         context={"sessions": [s.to_dict() for s in sessions]},
     )
+
+
+@router.get("/api/pane")
+async def api_pane(session: str, window: str, pane: str, lines: int = 200):
+    content = tmux_service.get_pane_content(session, window, pane, lines)
+    return JSONResponse(content={"content": content})
 
 
 @router.websocket("/ws")

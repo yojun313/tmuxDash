@@ -3,149 +3,148 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tmux Viewer</title>
+<title>TmuxDash</title>
 <style>
 @font-face {
   font-family: 'JetBrainsMono NF';
   src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/JetBrainsMono/NoLigatures/Regular/JetBrainsMonoNLNerdFont-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+  font-weight: normal; font-style: normal; font-display: swap;
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 :root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface2: #21262d;
-  --border: #30363d;
-  --text: #c9d1d9;
-  --muted: #8b949e;
-  --accent: #58a6ff;
-  --green: #3fb950;
-  --sidebar-w: 220px;
-  --header-h: 52px;
-  --tab-h: 40px;
+  --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+  --border: #30363d; --text: #c9d1d9; --muted: #8b949e;
+  --accent: #58a6ff; --green: #3fb950;
+  --sidebar-w: 220px; --header-h: 52px; --tab-h: 40px;
+  --term-size: 13px;
 }
-
-body { background: var(--bg); color: var(--text); font-family: 'JetBrainsMono NF', 'Consolas', 'Courier New', monospace; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-
-/* ── Header ── */
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'JetBrainsMono NF', 'Consolas', 'Courier New', monospace;
+  height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+}
 header {
-  height: var(--header-h);
-  background: var(--surface);
+  height: var(--header-h); background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
-  padding: 0 16px; gap: 10px;
-  flex-shrink: 0;
+  padding: 0 12px; gap: 8px; flex-shrink: 0;
 }
 .logo { font-size: 0.95rem; color: var(--accent); font-weight: 600; letter-spacing: -0.01em; }
-.badge { font-size: 0.7rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; padding: 2px 9px; color: var(--muted); }
+.badge {
+  font-size: 0.7rem; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 99px;
+  padding: 2px 9px; color: var(--muted);
+}
 .ws-dot { width: 7px; height: 7px; border-radius: 50%; background: #484f58; flex-shrink: 0; transition: background .4s; }
 .ws-dot.live { background: var(--green); }
 #ws-label { font-size: 0.72rem; color: var(--muted); }
 .ml-auto { margin-left: auto; }
-
-/* 모바일 메뉴 버튼 */
-#menu-btn {
-  display: none;
+.zoom-ctrl {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 2px 4px;
+}
+.zoom-btn {
+  background: none; border: none; color: var(--muted);
+  font-size: 1rem; width: 24px; height: 24px;
+  cursor: pointer; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s; font-family: inherit;
+}
+.zoom-btn:hover { background: var(--border); color: var(--text); }
+#zoom-label { font-size: 0.7rem; color: var(--muted); min-width: 30px; text-align: center; }
+.icon-btn {
   background: var(--surface2); border: 1px solid var(--border);
   color: var(--text); border-radius: 6px;
-  padding: 5px 10px; font-size: 0.8rem; cursor: pointer;
+  padding: 5px 9px; font-size: 0.85rem; cursor: pointer;
+  transition: background .12s;
 }
-
-/* ── Layout ── */
+.icon-btn:hover { background: var(--border); }
 .layout { display: flex; flex: 1; overflow: hidden; position: relative; }
-
-/* ── Sidebar ── */
 .sidebar {
-  width: var(--sidebar-w);
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--surface); border-right: 1px solid var(--border);
   overflow-y: auto; flex-shrink: 0;
-  transition: transform .25s ease;
+  transition: width .22s ease, min-width .22s ease;
 }
+.sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; border-right: none; }
 .session-label {
   font-size: 0.68rem; color: var(--muted); letter-spacing: .08em;
-  padding: 10px 14px 4px; text-transform: uppercase;
+  padding: 10px 14px 4px; text-transform: uppercase; white-space: nowrap;
 }
 .win-item {
   padding: 8px 14px; cursor: pointer;
   font-size: 0.82rem; border-left: 3px solid transparent;
   display: flex; align-items: center; gap: 8px;
-  transition: background .12s;
+  transition: background .12s; white-space: nowrap;
 }
 .win-item:hover { background: var(--surface2); }
 .win-item.selected { background: var(--surface2); border-left-color: var(--accent); color: var(--accent); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
 .dot.off { background: #484f58; }
-
-/* ── Main ── */
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-
 .pane-tabs {
   height: var(--tab-h); min-height: var(--tab-h);
   background: var(--surface); border-bottom: 1px solid var(--border);
   display: flex; align-items: stretch;
-  overflow-x: auto; flex-shrink: 0;
-  scrollbar-width: none;
+  overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
 }
 .pane-tabs::-webkit-scrollbar { display: none; }
 .pane-tab {
   padding: 0 16px; font-size: 0.78rem; cursor: pointer;
   border-bottom: 2px solid transparent; color: var(--muted);
-  white-space: nowrap; display: flex; align-items: center;
-  transition: color .12s;
+  white-space: nowrap; display: flex; align-items: center; transition: color .12s;
 }
 .pane-tab:hover { color: var(--text); }
 .pane-tab.selected { color: var(--accent); border-bottom-color: var(--accent); }
-
 .terminal {
   flex: 1; overflow-y: auto; overflow-x: auto;
-  padding: 14px 16px;
-  background: var(--bg);
+  padding: 14px 16px; background: var(--bg);
 }
-pre {
+.terminal pre {
   font-family: 'JetBrainsMono NF', 'Consolas', 'Courier New', monospace;
-  font-size: 0.8rem; line-height: 1.6;
-  white-space: pre-wrap; word-break: break-all;
-  color: var(--text);
+  font-size: var(--term-size); line-height: 1.6;
+  white-space: pre; word-break: normal; color: var(--text);
 }
 .empty { color: var(--muted); font-size: 0.82rem; padding: 28px 0; }
-
-/* 모바일 오버레이 */
-.overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.5); z-index: 9;
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 9; }
+#load-indicator {
+  text-align: center; padding: 6px;
+  font-size: 0.72rem; color: var(--muted);
+  display: none;
 }
 
-/* ── Mobile ── */
 @media (max-width: 640px) {
-  :root { --sidebar-w: 80vw; }
-  #menu-btn { display: block; }
-
+  :root { --sidebar-w: 80vw; --term-size: 11px; }
   .sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0;
-    z-index: 10; transform: translateX(-100%);
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 10;
+    transform: translateX(-100%);
+    transition: transform .25s ease !important;
+    width: var(--sidebar-w) !important; min-width: var(--sidebar-w) !important;
+    overflow-y: auto !important;
   }
   .sidebar.open { transform: translateX(0); }
   .overlay.open { display: block; }
-
-  pre { font-size: 0.74rem; }
-  .pane-tab { padding: 0 12px; font-size: 0.74rem; }
+  #zoom-label { display: none; }
+  .badge { display: none; }
 }
 </style>
 </head>
 <body>
 
 <header>
-  <button id="menu-btn" onclick="toggleSidebar()">☰</button>
-  <span class="logo">⬛ tmux</span>
+  <button class="icon-btn" onclick="toggleSidebar()" title="사이드바 접기/펼치기">☰</button>
+  <span class="logo">TmuxDash</span>
   <span class="badge" id="session-count">{{ sessions|length }} sessions</span>
   <span class="ws-dot" id="ws-dot"></span>
   <span id="ws-label">연결 중…</span>
-  <span class="ml-auto" style="font-size:.72rem;color:var(--muted)" id="last-update"></span>
+  <span class="ml-auto"></span>
+  <div class="zoom-ctrl">
+    <button class="zoom-btn" onclick="zoomOut()" title="축소">−</button>
+    <span id="zoom-label">100%</span>
+    <button class="zoom-btn" onclick="zoomIn()" title="확대">+</button>
+  </div>
+  <span style="font-size:.72rem;color:var(--muted);margin-left:6px" id="last-update"></span>
 </header>
 
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
@@ -154,35 +153,76 @@ pre {
   <div class="sidebar" id="sidebar"></div>
   <div class="main">
     <div class="pane-tabs" id="pane-tabs"></div>
+    <div id="load-indicator">▲ 이전 내용 불러오는 중…</div>
     <div class="terminal" id="terminal"><p class="empty">← 세션을 선택하세요.</p></div>
   </div>
 </div>
 
 <script>
+const LS = { SIZE: 'tmux_termSize', SIDEBAR: 'tmux_sidebarOpen', SEL: 'tmux_selection' };
+
+const SIZE_MIN = 8, SIZE_MAX = 24, SIZE_DEFAULT = 13;
+let termSize    = parseInt(localStorage.getItem(LS.SIZE) || SIZE_DEFAULT);
+let sidebarOpen = localStorage.getItem(LS.SIDEBAR) !== 'false';
+let sel         = JSON.parse(localStorage.getItem(LS.SEL) || 'null')
+                  || { session: null, window: null, pane: null };
+
 let sessions = {{ sessions | tojson }};
-let sel = { session: null, window: null, pane: null };
 let ws = null;
 
-// ── 사이드바 토글 (모바일) ──────────────────────
+// 히스토리 로드 상태
+let loadedLines = 200;
+const LINES_STEP = 200;
+const LINES_MAX  = 5000;
+let isFetching   = false;
+// 현재 선택 식별자 — 변경 감지용
+let selKey = '';
+
+// ── 배율 ─────────────────────────────────────────
+function applyZoom() {
+  document.documentElement.style.setProperty('--term-size', termSize + 'px');
+  document.getElementById('zoom-label').textContent =
+    Math.round(termSize / SIZE_DEFAULT * 100) + '%';
+  localStorage.setItem(LS.SIZE, termSize);
+}
+function zoomIn()  { if (termSize < SIZE_MAX) { termSize++; applyZoom(); } }
+function zoomOut() { if (termSize > SIZE_MIN) { termSize--; applyZoom(); } }
+
+// ── 사이드바 ─────────────────────────────────────
+const isMobile = () => window.innerWidth <= 640;
+
+function applySidebar() {
+  if (isMobile()) return;
+  document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+}
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overlay').classList.toggle('open');
+  if (isMobile()) {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('overlay');
+    const opening = !sb.classList.contains('open');
+    sb.classList.toggle('open', opening);
+    ov.classList.toggle('open', opening);
+  } else {
+    sidebarOpen = !sidebarOpen;
+    localStorage.setItem(LS.SIDEBAR, sidebarOpen);
+    applySidebar();
+  }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
 }
 
+function saveSel() { localStorage.setItem(LS.SEL, JSON.stringify(sel)); }
+
 // ── WebSocket ────────────────────────────────────
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(`${proto}://${location.host}/ws`);
-
   ws.onopen = () => {
     document.getElementById('ws-dot').classList.add('live');
     document.getElementById('ws-label').textContent = '실시간';
   };
-
   ws.onmessage = (e) => {
     sessions = JSON.parse(e.data);
     document.getElementById('session-count').textContent = sessions.length + ' sessions';
@@ -190,13 +230,11 @@ function connectWS() {
     renderSidebar();
     refreshMain();
   };
-
   ws.onclose = () => {
     document.getElementById('ws-dot').classList.remove('live');
     document.getElementById('ws-label').textContent = '끊김 — 재연결 중…';
     setTimeout(connectWS, 3000);
   };
-
   ws.onerror = () => ws.close();
 }
 
@@ -218,7 +256,6 @@ function renderSidebar() {
     lbl.className = 'session-label';
     lbl.textContent = s.name;
     sb.appendChild(lbl);
-
     s.windows.forEach(w => {
       const item = document.createElement('div');
       const isSelected = sel.session === s.name && sel.window === w.index;
@@ -226,10 +263,11 @@ function renderSidebar() {
       item.innerHTML = `<span class="dot ${w.active ? '' : 'off'}"></span>${w.index}: ${esc(w.name)}`;
       item.onclick = () => {
         sel = { session: s.name, window: w.index, pane: w.panes[0]?.index ?? null };
-        closeSidebar();
+        saveSel();
+        if (isMobile()) closeSidebar();
         renderSidebar();
         const win = getWin(s.name, w.index);
-        if (win) { renderTabs(win); renderTerminal(win); }
+        if (win) { renderTabs(win); renderTerminal(win, true); }
       };
       sb.appendChild(item);
     });
@@ -239,9 +277,23 @@ function renderSidebar() {
 function refreshMain() {
   if (!sel.session) return;
   const win = getWin(sel.session, sel.window);
-  if (!win) return;
+  if (!win) {
+    sel = { session: null, window: null, pane: null };
+    saveSel();
+    selKey = '';
+    document.getElementById('pane-tabs').innerHTML = '';
+    document.getElementById('terminal').innerHTML = '<p class="empty">← 세션을 선택하세요.</p>';
+    return;
+  }
   renderTabs(win);
-  renderTerminal(win);
+
+  const term = document.getElementById('terminal');
+  const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 60;
+
+  // 위쪽 히스토리 보는 중이면 터미널 내용 갱신 안 함
+  if (!atBottom) return;
+
+  renderTerminal(win, false);
 }
 
 function renderTabs(win) {
@@ -251,27 +303,86 @@ function renderTabs(win) {
     const tab = document.createElement('div');
     tab.className = 'pane-tab' + (p.index === sel.pane ? ' selected' : '');
     tab.textContent = `pane ${p.index}${p.title ? ': ' + p.title : ''}`;
-    tab.onclick = () => { sel.pane = p.index; renderTabs(win); renderTerminal(win); };
+    tab.onclick = () => {
+      sel.pane = p.index;
+      saveSel();
+      renderTabs(win);
+      renderTerminal(win, true); // 탭 전환 = 강제 리셋
+    };
     tabs.appendChild(tab);
   });
 }
 
-function renderTerminal(win) {
+// forceReset: 선택 변경 시 true → loadedLines 리셋 + 맨 아래로
+function renderTerminal(win, forceReset) {
   const term = document.getElementById('terminal');
   const pane = win.panes.find(p => p.index === sel.pane) ?? win.panes[0];
   if (!pane) { term.innerHTML = '<p class="empty">팬 없음</p>'; return; }
 
-  const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 40;
-  term.innerHTML = `<pre>${esc(pane.content)}</pre>`;
+  const newKey = `${sel.session}:${sel.window}:${pane.index}`;
+  const changed = newKey !== selKey;
+
+  if (changed || forceReset) {
+    // 선택이 바뀐 경우만 리셋
+    selKey = newKey;
+    loadedLines = 200;
+    if (sel.pane !== pane.index) { sel.pane = pane.index; saveSel(); }
+    term.innerHTML = pane.content;
+    term.scrollTop = term.scrollHeight; // 맨 아래로
+    return;
+  }
+
+  // 같은 팬 실시간 갱신 — 스크롤 위치 유지하며 내용만 교체
+  const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 60;
+  term.innerHTML = pane.content;
   if (atBottom) term.scrollTop = term.scrollHeight;
 }
+
+// ── 스크롤 위쪽 → 히스토리 더 로드 ──────────────
+document.getElementById('terminal').addEventListener('scroll', async function () {
+  if (this.scrollTop > 120) return;
+  if (isFetching || loadedLines >= LINES_MAX || !sel.session) return;
+
+  isFetching = true;
+  loadedLines += LINES_STEP;
+  document.getElementById('load-indicator').style.display = 'block';
+
+  const prevScrollHeight = this.scrollHeight;
+
+  try {
+    const url = `/api/pane?session=${encodeURIComponent(sel.session)}`
+              + `&window=${encodeURIComponent(sel.window)}`
+              + `&pane=${encodeURIComponent(sel.pane)}`
+              + `&lines=${loadedLines}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    term.innerHTML = data.content;
+    // 스크롤 위치 보정: 새로 추가된 높이만큼 내려서 현재 보던 위치 유지
+    this.scrollTop = this.scrollHeight - prevScrollHeight;
+  } catch {
+    loadedLines -= LINES_STEP;
+  } finally {
+    isFetching = false;
+    document.getElementById('load-indicator').style.display = 'none';
+  }
+});
+
+// term 변수 스크롤 핸들러에서 참조하기 위해 별도 선언
+const term = document.getElementById('terminal');
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ── 초기화 ───────────────────────────────────────
+applyZoom();
+applySidebar();
 renderSidebar();
+if (sel.session) {
+  const win = getWin(sel.session, sel.window);
+  if (win) { renderTabs(win); renderTerminal(win, true); }
+}
 connectWS();
 </script>
 </body>
