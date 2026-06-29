@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tmux Viewer — 로그인</title>
+<style>
+@font-face {
+  font-family: 'JetBrainsMono NF';
+  src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/JetBrainsMono/NoLigatures/Regular/JetBrainsMonoNLNerdFont-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'JetBrainsMono NF', 'Consolas', monospace;
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+}
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 36px 32px;
+  width: 100%; max-width: 360px;
+}
+.logo {
+  color: #58a6ff; font-size: 1rem;
+  font-weight: 600; margin-bottom: 24px;
+  text-align: center;
+}
+label {
+  display: block; font-size: 0.75rem;
+  color: #8b949e; margin-bottom: 6px;
+}
+input {
+  width: 100%;
+  background: #0d1117; border: 1px solid #30363d;
+  border-radius: 6px; color: #c9d1d9;
+  font-family: inherit; font-size: 0.85rem;
+  padding: 9px 12px; margin-bottom: 16px;
+  outline: none; transition: border-color .15s;
+}
+input:focus { border-color: #58a6ff; }
+button {
+  width: 100%;
+  background: #58a6ff; border: none;
+  border-radius: 6px; color: #0d1117;
+  font-family: inherit; font-size: 0.85rem;
+  font-weight: 600; padding: 10px;
+  cursor: pointer; transition: background .15s;
+}
+button:hover { background: #79b8ff; }
+.error {
+  background: #3d1c1c; border: 1px solid #f85149;
+  border-radius: 6px; color: #f85149;
+  font-size: 0.78rem; padding: 9px 12px;
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⬛ tmux viewer</div>
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+  <form method="post" action="/login">
+    <label>아이디</label>
+    <input type="text" name="username" autocomplete="username" autofocus required>
+    <label>비밀번호</label>
+    <input type="password" name="password" autocomplete="current-password" required>
+    <button type="submit">로그인</button>
+  </form>
+</div>
+</body>
+</html>
